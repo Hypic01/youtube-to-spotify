@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, Music } from "lucide-react";
@@ -15,6 +16,34 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
+
+  // Redirect to dashboard if user is already authenticated
+  useEffect(() => {
+    if (user && !loading) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session && !error) {
+        router.push("/dashboard");
+      }
+    };
+
+    // Check if we're returning from OAuth (URL has access_token or error)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAccessToken = urlParams.get('access_token');
+    const hasError = urlParams.get('error');
+    
+    if (hasAccessToken || hasError) {
+      handleAuthCallback();
+    }
+  }, [router]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +96,11 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Don't render login page if user is already authenticated
+  if (user && !loading) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">

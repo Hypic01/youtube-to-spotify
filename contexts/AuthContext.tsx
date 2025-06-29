@@ -25,34 +25,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. 최초 유저 정보 가져오기
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        setUser({ id: user.id, email: user.email! });
-      } else {
+    // 1. Get initial user session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setUser(null);
+        } else if (session?.user) {
+          setUser({ 
+            id: session.user.id, 
+            email: session.user.email || '' 
+          });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    getUser();
+    getInitialSession();
 
-    // 2. 로그인/로그아웃 상태 실시간 반영
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: unknown) => {
-      if (session && typeof session === 'object' && 'user' in session && session.user) {
-        const user = session.user as { id: string; email: string };
-        setUser({ id: user.id, email: user.email });
-      } else {
-        setUser(null);
+    // 2. Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser({ 
+            id: session.user.id, 
+            email: session.user.email || '' 
+          });
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        } else if (session?.user) {
+          setUser({ 
+            id: session.user.id, 
+            email: session.user.email || '' 
+          });
+        } else {
+          setUser(null);
+        }
+        
+        setLoading(false);
       }
-    });
+    );
 
     return () => {
       subscription.unsubscribe();
@@ -60,8 +82,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
