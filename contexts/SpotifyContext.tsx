@@ -58,6 +58,9 @@ export const SpotifyProvider: React.FC<SpotifyProviderProps> = ({ children }) =>
 
   // Check for authorization code in URL (after Spotify OAuth redirect)
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const error = urlParams.get('error');

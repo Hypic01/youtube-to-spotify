@@ -1,6 +1,14 @@
 // Spotify API Configuration
 const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-const SPOTIFY_REDIRECT_URI = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || `${window.location.origin}/dashboard`;
+
+// Safe way to get redirect URI that works in both client and server
+const getRedirectUri = () => {
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || `${window.location.origin}/dashboard`;
+  }
+  return process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || 'http://localhost:3000/dashboard';
+};
+
 const SPOTIFY_SCOPES = [
   'playlist-read-private',
   'playlist-modify-public',
@@ -11,10 +19,12 @@ const SPOTIFY_SCOPES = [
 
 // Spotify OAuth URL
 export const getSpotifyAuthUrl = () => {
+  const redirectUri = getRedirectUri();
+  
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID!,
     response_type: 'code',
-    redirect_uri: SPOTIFY_REDIRECT_URI,
+    redirect_uri: redirectUri,
     scope: SPOTIFY_SCOPES,
     state: Math.random().toString(36).substring(7), // Random state for security
   });
