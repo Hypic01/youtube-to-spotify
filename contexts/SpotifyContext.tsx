@@ -130,13 +130,15 @@ export const SpotifyProvider: React.FC<SpotifyProviderProps> = ({ children }) =>
 
     try {
       setLoading(true);
-      
+
       // Exchange code for token
       const tokenData = await exchangeCodeForToken(code);
-      
+      console.log('Token data:', tokenData);
+
       // Get user profile
       const profile = await getSpotifyProfile(tokenData.access_token);
-      
+      console.log('Spotify profile:', profile);
+
       // Store tokens in Supabase
       const { error } = await supabase
         .from('user_spotify_tokens')
@@ -147,18 +149,16 @@ export const SpotifyProvider: React.FC<SpotifyProviderProps> = ({ children }) =>
           expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
           spotify_user_id: profile.id,
         });
-
       if (error) {
+        console.error('Supabase upsert error:', error);
         throw error;
       }
 
       setSpotifyProfile(profile);
       setAccessToken(tokenData.access_token);
       setIsConnected(true);
-      
+
       toast.success('Spotify connected successfully!');
-      
-      // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
       console.error('Error handling Spotify callback:', error);
