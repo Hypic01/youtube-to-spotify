@@ -43,6 +43,7 @@ export const SpotifyProvider: React.FC<SpotifyProviderProps> = ({ children }) =>
   const [spotifyProfile, setSpotifyProfile] = useState<SpotifyProfile | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasHandled, setHasHandled] = useState(false);
 
   // Check for Spotify connection on mount and when user changes
   useEffect(() => {
@@ -123,6 +124,8 @@ export const SpotifyProvider: React.FC<SpotifyProviderProps> = ({ children }) =>
   };
 
   const handleSpotifyCallback = async (code: string) => {
+    if (hasHandled) return;
+    setHasHandled(true);
     if (!user) return;
 
     try {
