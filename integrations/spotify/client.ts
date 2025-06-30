@@ -1,12 +1,19 @@
 // Spotify API Configuration
 const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
 
-// Safe way to get redirect URI that works in both client and server
+// Get redirect URI from environment variable
 const getRedirectUri = () => {
-  if (typeof window !== 'undefined') {
-    return process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || `${window.location.origin}/dashboard`;
+  // Always use the environment variable for production
+  if (process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI) {
+    return process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI;
   }
-  return process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || 'http://localhost:3000/dashboard';
+  
+  // Fallback for development
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/dashboard`;
+  }
+  
+  return 'http://localhost:3000/dashboard';
 };
 
 const SPOTIFY_SCOPES = [

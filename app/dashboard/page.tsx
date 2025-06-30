@@ -94,7 +94,7 @@ export default function DashboardPage() {
                 <Button
                   onClick={handleSpotifyConnect}
                   disabled={spotifyLoading}
-                  className="bg-green-500 hover:bg-green-600 text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="bg-green-500 hover:bg-green-600 text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 cursor-pointer"
                 >
                   <LinkIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   {spotifyLoading ? "Connecting..." : "Connect"}

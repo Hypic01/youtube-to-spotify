@@ -6,6 +6,19 @@ const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'http://localho
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate environment variables
+    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+      console.error('Missing Spotify environment variables:', {
+        hasClientId: !!SPOTIFY_CLIENT_ID,
+        hasClientSecret: !!SPOTIFY_CLIENT_SECRET,
+        redirectUri: SPOTIFY_REDIRECT_URI
+      });
+      return NextResponse.json(
+        { error: 'Spotify configuration is missing' },
+        { status: 500 }
+      );
+    }
+
     const { code } = await request.json();
 
     if (!code) {
@@ -14,6 +27,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    console.log('Attempting to exchange code for token with:', {
+      redirectUri: SPOTIFY_REDIRECT_URI,
+      hasCode: !!code
+    });
 
     // Exchange authorization code for access token
     const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
@@ -33,14 +51,19 @@ export async function POST(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
-      console.error('Spotify token exchange error:', errorData);
+      console.error('Spotify token exchange error:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        errorData
+      });
       return NextResponse.json(
-        { error: 'Failed to exchange authorization code for token' },
+        { error: `Failed to exchange authorization code for token: ${errorData}` },
         { status: 400 }
       );
     }
 
     const tokenData = await tokenResponse.json();
+    console.log('Successfully exchanged code for token');
 
     return NextResponse.json({
       access_token: tokenData.access_token,
