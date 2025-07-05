@@ -7,12 +7,15 @@ export async function recognizeSongsFromYouTube(youtubeUrl: string) {
     body: JSON.stringify({ youtubeUrl }),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to recognize songs from AudD');
+    if (response.status === 404) {
+      throw new Error(data.message || 'No songs were recognized in this video. Try a different video with clearer music.');
+    }
+    throw new Error(data.error || 'Failed to recognize songs from AudD');
   }
 
-  const data = await response.json();
   // data.result is an array of recognized tracks (if multiple found)
   return data.result;
 } 

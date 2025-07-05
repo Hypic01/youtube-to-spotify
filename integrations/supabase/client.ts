@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Supabase is used in this project for:
+// 1. User authentication (sign up, sign in, sign out, session management)
+// 2. Storing and managing Spotify access/refresh tokens in the 'user_spotify_tokens' table
+//
+// Supabase is not currently used for general app data (e.g., playlists, conversions), but could be extended for that purpose.
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

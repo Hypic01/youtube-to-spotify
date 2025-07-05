@@ -6,14 +6,25 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSpotify } from "@/contexts/SpotifyContext";
-import { Music, Link as LinkIcon, CheckCircle, LogOut } from "lucide-react";
+import { Music, Link as LinkIcon, CheckCircle, LogOut, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { searchSpotifyTracks, createSpotifyPlaylist, addTracksToPlaylist } from "@/integrations/spotify/client";
 import { recognizeSongsFromYouTube } from "@/integrations/audd/client";
 
+type RecognizedSong = {
+  title: string;
+  artist: string;
+  spotifyUri?: string;
+  found: boolean;
+};
+
+type ProgressStep = 'idle' | 'recognizing' | 'searching' | 'creating' | 'preview';
+
 export default function DashboardPage() {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [converting, setConverting] = useState(false);
+  const [recognizedSongs, setRecognizedSongs] = useState<RecognizedSong[]>([]);
+  const [progressStep, setProgressStep] = useState<ProgressStep>('idle');
   const router = useRouter();
   const { user } = useAuth();
   const {
@@ -50,46 +61,126 @@ export default function DashboardPage() {
       toast.error("⚠️ Please connect your Spotify account first");
       return;
     }
+
     setConverting(true);
+    setProgressStep('recognizing');
+    setRecognizedSongs([]);
+
     try {
       // 1. Recognize songs from YouTube using AudD
       const auddResults = await recognizeSongsFromYouTube(youtubeUrl);
       if (!auddResults || auddResults.length === 0) {
         toast.error("Could not recognize any songs in this video.");
         setConverting(false);
+        setProgressStep('idle');
         return;
       }
+
       // 2. For each recognized song, search on Spotify
-      const foundTracks: string[] = [];
+      setProgressStep('searching');
+      const songsWithSpotify: RecognizedSong[] = [];
+      
       for (const result of auddResults) {
         const query = result.title && result.artist ? `${result.title} ${result.artist}` : result.title;
         if (!query) continue;
+        
         const tracks = await searchSpotifyTracks(accessToken, query, 1);
-        if (tracks && tracks.length > 0) {
-          foundTracks.push(tracks[0].uri);
-        }
+        const found = tracks && tracks.length > 0;
+        
+        songsWithSpotify.push({
+          title: result.title || 'Unknown Title',
+          artist: result.artist || 'Unknown Artist',
+          spotifyUri: found ? tracks[0].uri : undefined,
+          found
+        });
       }
-      if (foundTracks.length === 0) {
+
+      if (songsWithSpotify.length === 0) {
         toast.error("Could not find any recognized songs on Spotify.");
         setConverting(false);
+        setProgressStep('idle');
         return;
       }
-      // 3. Create a new playlist
-      const playlistName = `YT2Spotify: ${auddResults[0].title || "Playlist"}`;
+
+      // 3. Show preview of recognized songs
+      setRecognizedSongs(songsWithSpotify);
+      setProgressStep('preview');
+      setConverting(false);
+
+    } catch (error) {
+      console.error('Error during recognition:', error);
+      toast.error("Something went wrong during song recognition.");
+      setConverting(false);
+      setProgressStep('idle');
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!accessToken || !spotifyProfile) return;
+
+    setConverting(true);
+    setProgressStep('creating');
+
+    try {
+      const foundTracks = recognizedSongs
+        .filter(song => song.found)
+        .map(song => song.spotifyUri!)
+        .filter(Boolean);
+
+      if (foundTracks.length === 0) {
+        toast.error("No songs found to add to playlist.");
+        setConverting(false);
+        setProgressStep('idle');
+        return;
+      }
+
+      // Create a new playlist
+      const playlistName = `YT2Spotify: ${recognizedSongs[0].title || "Playlist"}`;
       const playlist = await createSpotifyPlaylist(
         accessToken,
         spotifyProfile.id,
         playlistName,
         `Created from YouTube: ${youtubeUrl}`
       );
-      // 4. Add all found tracks to the playlist
+
+      // Add all found tracks to the playlist
       await addTracksToPlaylist(accessToken, playlist.id, foundTracks);
+      
       toast.success(`Playlist created! Added ${foundTracks.length} song(s).`);
       setYoutubeUrl("");
-    } catch {
-      toast.error("Something went wrong during conversion.");
+      setRecognizedSongs([]);
+      setProgressStep('idle');
+    } catch (error) {
+      console.error('Error creating playlist:', error);
+      toast.error("Something went wrong during playlist creation.");
+      setConverting(false);
+      setProgressStep('idle');
     } finally {
       setConverting(false);
+    }
+  };
+
+  const handleCancelPreview = () => {
+    setRecognizedSongs([]);
+    setProgressStep('idle');
+    setConverting(false);
+  };
+
+  const getProgressText = () => {
+    switch (progressStep) {
+      case 'recognizing': return 'Recognizing songs from YouTube...';
+      case 'searching': return 'Searching for songs on Spotify...';
+      case 'creating': return 'Creating playlist...';
+      default: return '';
+    }
+  };
+
+  const getProgressColor = () => {
+    switch (progressStep) {
+      case 'recognizing': return 'text-blue-400';
+      case 'searching': return 'text-green-400';
+      case 'creating': return 'text-purple-400';
+      default: return 'text-gray-400';
     }
   };
 
@@ -142,27 +233,95 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
           {/* YouTube → Spotify Section */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-white/20">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Convert Playlist</h2>
             <p className="text-sm sm:text-base text-gray-300 mb-6">
               Paste your YouTube link below to convert it to a Spotify playlist.
             </p>
+            
+            {/* Progress Indicator */}
+            {progressStep !== 'idle' && progressStep !== 'preview' && (
+              <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span className={`text-sm font-medium ${getProgressColor()}`}>
+                    {getProgressText()}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Song Preview */}
+            {progressStep === 'preview' && recognizedSongs.length > 0 && (
+              <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                <h3 className="text-white font-semibold mb-3">Recognized Songs ({recognizedSongs.filter(s => s.found).length} found)</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {recognizedSongs.map((song, index) => (
+                    <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${
+                      song.found ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        {song.found ? (
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <X className="w-4 h-4 text-red-400" />
+                        )}
+                        <div>
+                          <p className="text-white font-medium text-sm">{song.title}</p>
+                          <p className="text-gray-400 text-xs">{song.artist}</p>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-medium ${
+                        song.found ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {song.found ? 'Found' : 'Not found'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               <Input
                 type="url"
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 rounded-xl py-3 text-sm sm:text-base"
+                disabled={converting || progressStep === 'preview'}
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 rounded-xl py-3 text-sm sm:text-base disabled:opacity-50"
               />
-              <Button
-                onClick={handleConvert}
-                disabled={!isConnected || converting}
-                className="w-full bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {converting ? "Converting..." : "Convert to Spotify Playlist"}
-              </Button>
+              
+              {progressStep === 'preview' ? (
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleCreatePlaylist}
+                    disabled={converting}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    {converting ? "Creating..." : "Create Playlist"}
+                  </Button>
+                  <Button
+                    onClick={handleCancelPreview}
+                    disabled={converting}
+                    variant="outline"
+                    className="px-6 border-white/20 text-white hover:bg-white/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleConvert}
+                  disabled={!isConnected || converting}
+                  className="w-full bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {converting ? "Converting..." : "Convert to Spotify Playlist"}
+                </Button>
+              )}
             </div>
           </div>
         </div>
