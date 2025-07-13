@@ -1,12 +1,12 @@
 export async function recognizeSongsFromYouTube(youtubeUrl: string) {
-  console.log('AudD client: Making request to /api/audd/recognize with URL:', youtubeUrl);
+  console.log('AudD client: Making request to /api/acrcloud/recognize with URL:', youtubeUrl);
   
   // Force localhost in development
   const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
     ? 'http://localhost:3000' 
     : '';
   
-  const response = await fetch(`${baseUrl}/api/audd/recognize`, {
+  const response = await fetch(`${baseUrl}/api/acrcloud/recognize`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ export async function recognizeSongsFromYouTube(youtubeUrl: string) {
     if (response.status === 404) {
       throw new Error(data.message || 'No songs were recognized in this video. Try a different video with clearer music.');
     }
-    throw new Error(data.error || 'Failed to recognize songs from AudD');
+    throw new Error(data.error || 'Failed to recognize songs from ACRCloud');
   }
 
   // data.result is an array of recognized tracks (if multiple found)
