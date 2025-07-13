@@ -62,13 +62,17 @@ export default function DashboardPage() {
       return;
     }
 
+    console.log('Starting conversion with URL:', youtubeUrl);
     setConverting(true);
     setProgressStep('recognizing');
     setRecognizedSongs([]);
 
     try {
       // 1. Recognize songs from YouTube using AudD
+      console.log('Calling AudD API...');
       const auddResults = await recognizeSongsFromYouTube(youtubeUrl);
+      console.log('AudD results:', auddResults);
+      
       if (!auddResults || auddResults.length === 0) {
         toast.error("Could not recognize any songs in this video.");
         setConverting(false);

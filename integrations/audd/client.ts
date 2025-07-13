@@ -1,5 +1,12 @@
 export async function recognizeSongsFromYouTube(youtubeUrl: string) {
-  const response = await fetch('/api/audd/recognize', {
+  console.log('AudD client: Making request to /api/audd/recognize with URL:', youtubeUrl);
+  
+  // Force localhost in development
+  const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : '';
+  
+  const response = await fetch(`${baseUrl}/api/audd/recognize`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -7,7 +14,11 @@ export async function recognizeSongsFromYouTube(youtubeUrl: string) {
     body: JSON.stringify({ youtubeUrl }),
   });
 
+  console.log('AudD client: Response status:', response.status);
+  console.log('AudD client: Response URL:', response.url);
+  
   const data = await response.json();
+  console.log('AudD client: Response data:', data);
 
   if (!response.ok) {
     if (response.status === 404) {

@@ -7,45 +7,68 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing YouTube URL' }, { status: 400 });
     }
 
-    console.log('AudD API called with URL:', youtubeUrl);
+    console.log('ACRCloud API called with URL:', youtubeUrl);
 
-    const apiKey = process.env.AUDD_API_KEY;
-    if (!apiKey) {
-      console.error('Missing AudD API key');
-      return NextResponse.json({ error: 'Server misconfiguration: missing AudD API key' }, { status: 500 });
+    // ACRCloud credentials - you'll need to get these from ACRCloud
+    const accessKey = process.env.ACRCLOUD_ACCESS_KEY;
+    const accessSecret = process.env.ACRCLOUD_ACCESS_SECRET;
+    const host = process.env.ACRCLOUD_HOST || 'identify-eu-west-1.acrcloud.com';
+
+    if (!accessKey || !accessSecret) {
+      console.error('Missing ACRCloud credentials');
+      return NextResponse.json({ error: 'Server misconfiguration: missing ACRCloud credentials' }, { status: 500 });
     }
 
-    // Call AudD API with YouTube link
-    const auddRes = await fetch('https://api.audd.io/', {
+    // ACRCloud API call
+    const acrRes = await fetch(`https://${host}/v1/identify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'access-key': accessKey,
+        'access-secret': accessSecret,
+      },
       body: JSON.stringify({
-        api_token: apiKey,
         url: youtubeUrl,
-        return: 'apple_music,spotify',
+        data_type: 'url',
+        signature_version: '1',
+        timestamp: Math.floor(Date.now() / 1000)
       }),
     });
 
-    const auddData = await auddRes.json();
-    console.log('AudD API response:', JSON.stringify(auddData, null, 2));
+    const acrData = await acrRes.json();
+    console.log('ACRCloud API response:', JSON.stringify(acrData, null, 2));
 
-    if (!auddRes.ok) {
-      console.error('AudD API error:', auddData);
-      return NextResponse.json({ error: 'AudD API error', details: auddData }, { status: 502 });
+    if (!acrRes.ok) {
+      console.error('ACRCloud API error:', acrData);
+      return NextResponse.json({ error: 'ACRCloud API error', details: acrData }, { status: 502 });
     }
 
-    // Check if AudD returned any results
-    if (!auddData.result || auddData.result.length === 0) {
-      console.log('No songs recognized by AudD');
+    // Check if ACRCloud returned any results
+    if (!acrData.status || acrData.status.code !== 0 || !acrData.metadata || !acrData.metadata.music) {
+      console.log('No songs recognized by ACRCloud');
       return NextResponse.json({ 
         error: 'No songs recognized', 
-        details: auddData,
-        message: 'AudD could not identify any songs in this video. This might be because the video contains no music, the audio quality is poor, or the content is not supported.'
+        details: acrData,
+        message: 'ACRCloud could not identify any songs in this video. This might be because the video contains no music, the audio quality is poor, or the content is not supported.'
       }, { status: 404 });
     }
 
-    console.log(`AudD recognized ${auddData.result.length} songs`);
-    return NextResponse.json(auddData);
+    // Convert ACRCloud response to our expected format
+    const musicResults = acrData.metadata.music.map((track: any) => ({
+      title: track.title || 'Unknown Title',
+      artist: track.artists?.[0]?.name || track.artists?.[0] || 'Unknown Artist',
+      album: track.album?.name,
+      release_date: track.release_date,
+      spotify: track.external_ids?.spotify?.track_id ? {
+        uri: `spotify:track:${track.external_ids.spotify.track_id}`
+      } : undefined
+    }));
+
+    console.log(`ACRCloud recognized ${musicResults.length} songs`);
+    return NextResponse.json({
+      status: 'success',
+      result: musicResults
+    });
   } catch (error) {
     console.error('Error in /api/audd/recognize:', error);
     return NextResponse.json({ error: 'Internal server error', details: error?.toString() }, { status: 500 });
