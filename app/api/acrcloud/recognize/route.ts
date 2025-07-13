@@ -18,6 +18,7 @@ interface ACRCloudTrack {
 }
 
 export async function POST(req: NextRequest) {
+  console.log('ACRCloud recognize API route hit');
   try {
     const { youtubeUrl } = await req.json();
     if (!youtubeUrl) {
@@ -91,7 +92,9 @@ export async function POST(req: NextRequest) {
       result: musicResults
     });
   } catch (error) {
-    console.error('Error in /api/audd/recognize:', error);
+    console.error('Error in /api/acrcloud/recognize:', error);
     return NextResponse.json({ error: 'Internal server error', details: error?.toString() }, { status: 500 });
   }
+  // Fallback: always return JSON
+  return NextResponse.json({ error: 'Unknown error: no response returned' }, { status: 500 });
 } 
