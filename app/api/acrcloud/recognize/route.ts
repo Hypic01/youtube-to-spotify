@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface ACRCloudArtist {
+  name?: string;
+}
+interface ACRCloudAlbum {
+  name?: string;
+}
+interface ACRCloudExternalIds {
+  spotify?: { track_id?: string };
+}
 interface ACRCloudTrack {
   title?: string;
-  artists?: { name?: string }[];
-  album?: { name?: string };
+  artists?: ACRCloudArtist[];
+  album?: ACRCloudAlbum;
   release_date?: string;
-  external_ids?: { spotify?: { track_id?: string } };
+  external_ids?: ACRCloudExternalIds;
 }
 
 export async function POST(req: NextRequest) {
@@ -62,15 +71,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Convert ACRCloud response to our expected format
-    const musicResults = (acrData.metadata.music as ACRCloudTrack[]).map((track) => ({
-      title: track.title || 'Unknown Title',
-      artist: track.artists?.[0]?.name || (typeof track.artists?.[0] === 'string' ? track.artists[0] : 'Unknown Artist'),
-      album: track.album?.name,
-      release_date: track.release_date,
-      spotify: track.external_ids?.spotify?.track_id
-        ? { uri: `spotify:track:${track.external_ids.spotify.track_id}` }
-        : undefined,
-    }));
+    const musicResults = Array.isArray(acrData.metadata.music)
+      ? (acrData.metadata.music as ACRCloudTrack[]).map((track) => ({
+          title: track.title || 'Unknown Title',
+          artist:
+            (track.artists && track.artists[0] && track.artists[0].name) ||
+            'Unknown Artist',
+          album: track.album?.name,
+          release_date: track.release_date,
+          spotify: track.external_ids?.spotify?.track_id
+            ? { uri: `spotify:track:${track.external_ids.spotify.track_id}` }
+            : undefined,
+        }))
+      : [];
 
     console.log(`ACRCloud recognized ${musicResults.length} songs`);
     return NextResponse.json({
