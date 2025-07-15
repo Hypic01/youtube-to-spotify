@@ -37,20 +37,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Server misconfiguration: missing ACRCloud credentials' }, { status: 500 });
     }
 
+    // Prepare form data for ACRCloud
+    const formData = new URLSearchParams();
+    formData.append('url', youtubeUrl);
+    formData.append('data_type', 'url');
+    formData.append('signature_version', '1');
+    formData.append('access_key', accessKey);
+    formData.append('timestamp', Math.floor(Date.now() / 1000).toString());
+    // If signature is required, add: formData.append('signature', signature);
+
     // ACRCloud API call
     const acrRes = await fetch(`https://${host}/v1/identify`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'access-key': accessKey,
-        'access-secret': accessSecret,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        url: youtubeUrl,
-        data_type: 'url',
-        signature_version: '1',
-        timestamp: Math.floor(Date.now() / 1000)
-      }),
+      body: formData.toString(),
     });
 
     const acrData = await acrRes.json();
