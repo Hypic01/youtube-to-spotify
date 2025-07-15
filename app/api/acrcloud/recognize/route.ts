@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 interface ACRCloudArtist {
   name?: string;
@@ -15,6 +16,11 @@ interface ACRCloudTrack {
   album?: ACRCloudAlbum;
   release_date?: string;
   external_ids?: ACRCloudExternalIds;
+}
+
+function generateSignature(accessKey: string, accessSecret: string, timestamp: string) {
+  const stringToSign = ['POST', '/v1/identify', accessKey, '1', timestamp].join('\n');
+  return crypto.createHmac('sha1', accessSecret).update(stringToSign).digest('base64');
 }
 
 export async function POST(req: NextRequest) {
@@ -38,13 +44,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare form data for ACRCloud
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = generateSignature(accessKey, accessSecret, timestamp);
     const formData = new URLSearchParams();
-    formData.append('url', youtubeUrl);
-    formData.append('data_type', 'url');
-    formData.append('signature_version', '1');
     formData.append('access_key', accessKey);
-    formData.append('timestamp', Math.floor(Date.now() / 1000).toString());
-    // If signature is required, add: formData.append('signature', signature);
+    formData.append('signature', signature);
+    formData.append('timestamp', timestamp);
+    formData.append('signature_version', '1');
+    formData.append('data_type', 'url');
+    formData.append('url', youtubeUrl);
 
     // ACRCloud API call
     const acrRes = await fetch(`https://${host}/v1/identify`, {
