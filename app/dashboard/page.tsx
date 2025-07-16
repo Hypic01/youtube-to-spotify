@@ -10,6 +10,7 @@ import { Music, Link as LinkIcon, CheckCircle, LogOut, Play, X } from "lucide-re
 import { toast } from "sonner";
 import { searchSpotifyTracks, createSpotifyPlaylist, addTracksToPlaylist } from "@/integrations/spotify/client";
 import { recognizeSongsFromYouTube } from "@/integrations/audd/client";
+import { supabase } from "@/integrations/supabase/client";
 
 type RecognizedSong = {
   title: string;
@@ -35,12 +36,30 @@ export default function DashboardPage() {
     disconnectSpotify,
     loading: spotifyLoading,
   } = useSpotify();
+  const [credits, setCredits] = useState<number | null>(null);
 
   useEffect(() => {
     if (user === null) {
       router.push("/login");
     }
   }, [user, router]);
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("credits")
+        .eq("id", user.id)
+        .single();
+      if (error) {
+        setCredits(null);
+      } else {
+        setCredits(data.credits);
+      }
+    };
+    fetchCredits();
+  }, [user]);
 
   if (!user) return null; // 로딩 중
 
@@ -190,6 +209,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 pt-16 sm:pt-20 lg:pt-[80px]">
+      {/* Credits Display */}
+      <div className="w-full flex justify-center mb-4">
+        <div className="bg-white/20 text-white font-bold rounded-xl px-6 py-3 text-lg shadow-lg border border-white/30">
+          {credits !== null
+            ? `Free conversions left this week: ${credits}/3`
+            : "Loading credits..."}
+        </div>
+      </div>
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="max-w-2xl mx-auto">
