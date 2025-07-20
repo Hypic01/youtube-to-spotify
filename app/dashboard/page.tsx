@@ -210,7 +210,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 pt-16 sm:pt-20 lg:pt-[80px]">
       {/* Credits Display */}
-      <div className="w-full flex justify-center mb-4">
+      <div className="w-full flex justify-center mt-8 mb-4">
         <div className="bg-white/20 text-white font-bold rounded-xl px-6 py-3 text-lg shadow-lg border border-white/30">
           {credits !== null
             ? `Free conversions left this week: ${credits}/3`
@@ -223,7 +223,7 @@ export default function DashboardPage() {
           {/* Spotify Connection */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-white/20 mb-6 sm:mb-8">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Connect Your Accounts</h2>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 gap-4 sm:gap-0">
+            <div className="flex flex-row items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center">
                   <Music className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
