@@ -24,6 +24,17 @@ export async function recognizeSongsFromYouTube(youtubeUrl: string) {
     if (response.status === 404) {
       throw new Error(data.message || 'No songs were recognized in this video. Try a different video with clearer music.');
     }
+    
+    // Show more detailed error information
+    if (data.details) {
+      console.error('ACRCloud API error details:', data.details);
+      if (typeof data.details === 'object') {
+        throw new Error(`ACRCloud API error: ${JSON.stringify(data.details)}`);
+      } else {
+        throw new Error(`ACRCloud API error: ${data.details}`);
+      }
+    }
+    
     throw new Error(data.error || 'Failed to recognize songs from ACRCloud');
   }
 

@@ -103,22 +103,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <div className="w-full max-w-sm sm:max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-2 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="w-full max-w-full sm:max-w-md mx-4">
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex justify-center mb-4 sm:mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-orange-500 rounded-full blur-xl opacity-50 animate-pulse" />
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-full p-3 sm:p-4 border border-white/20">
-                <Music className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-full p-5 sm:p-7 border border-white/20">
+                <Music className="w-10 h-10 sm:w-14 sm:h-14 text-white" />
               </div>
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
             {isSignUp ? "Start converting videos." : "Welcome back!"}
           </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-300">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-300">
             {isSignUp 
               ? "Create an account to build playlists automatically."
               : "Sign in to convert your next video to a playlist."

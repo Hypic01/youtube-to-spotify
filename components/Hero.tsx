@@ -3,21 +3,11 @@
 import { ArrowRight, Music, Play, List, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const { user } = useAuth();
-  const router = useRouter();
-
   const handleGetStarted = () => {
-    if (user) {
-      // If logged in, go to dashboard
-      router.push("/dashboard");
-    } else {
-      // If not logged in, go to login page
-      router.push("/login");
-    }
+    // Simple navigation without hooks for now
+    window.location.href = "/login";
   };
 
   return (
@@ -36,12 +26,11 @@ export default function Home() {
               </div>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight px-2">
-              Turn any <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">YouTube</span> video into a<br className="hidden sm:block" />
-              <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">Spotify</span> playlist
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-8 sm:mb-4 leading-tight px-2">
+              Turn any <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">YouTube</span> video into a <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">Spotify</span> playlist
             </h1>
 
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-4 sm:mb-6 max-w-2xl sm:max-w-3xl mx-auto leading-relaxed px-4">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-4 sm:mb-6 max-w-2xl sm:max-w-3xl mx-auto leading-tight px-4">
               Paste a YouTube link. <br /> We&apos;ll find every song and build a Spotify playlist for you.
             </p>
 
@@ -51,7 +40,7 @@ export default function Home() {
                 className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white px-6 sm:px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 text-base sm:text-lg cursor-pointer"
                 onClick={handleGetStarted}
               >
-                {user ? "Build My Playlist" : "Start now"} <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
+                Start now <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </div>
 
@@ -142,7 +131,7 @@ export default function Home() {
               className="bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-semibold text-base sm:text-lg transition-all duration-300 hover:scale-105 cursor-pointer"
               onClick={handleGetStarted}
             >
-              {user ? "Go to Dashboard" : "Make My first Spotify Playlist"} <ArrowRight className="ml-2 sm:ml-3 w-4 h-4 sm:w-6 sm:h-6" />
+              Make My first Spotify Playlist <ArrowRight className="ml-2 sm:ml-3 w-4 h-4 sm:w-6 sm:h-6" />
             </Button>
           </div>
         </div>

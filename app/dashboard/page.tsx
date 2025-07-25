@@ -237,7 +237,7 @@ export default function DashboardPage() {
               </div>
               {isConnected ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 text-green-400">
+                <div className="flex items-center gap-2 text-green-400">
                     <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="text-xs sm:text-sm font-medium">Connected</span>
                   </div>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                 disabled={converting || progressStep === 'preview'}
                 className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 rounded-xl py-3 text-sm sm:text-base disabled:opacity-50"
               />
-              
+
               {progressStep === 'preview' ? (
                 <div className="flex gap-3">
                   <Button
@@ -345,13 +345,13 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={handleConvert}
+              <Button
+                onClick={handleConvert}
                   disabled={!isConnected || converting}
                   className="w-full bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+              >
                   {converting ? "Converting..." : "Convert to Spotify Playlist"}
-                </Button>
+              </Button>
               )}
             </div>
           </div>

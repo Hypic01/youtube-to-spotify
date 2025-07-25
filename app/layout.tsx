@@ -37,7 +37,7 @@ export default function RootLayout({
         <AuthProvider>
           <SpotifyProvider>
             <Navbar />
-              {children}
+        {children}
               <Toaster />
           </SpotifyProvider>
         </AuthProvider>

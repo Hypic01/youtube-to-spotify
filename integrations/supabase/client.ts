@@ -9,8 +9,13 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Only throw error if we're on the client side and variables are missing
+if (typeof window !== 'undefined' && (!supabaseUrl || !supabaseAnonKey)) {
   throw new Error('Missing Supabase environment variables. Please check your .env.local file.')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey) 
+// Create client with fallback values for server-side rendering
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+) 
