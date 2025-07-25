@@ -27,17 +27,19 @@ export async function POST(req: NextRequest) {
     }
 
     // POST the YouTube URL to the File Scanning API
+    // Try the correct endpoint format: /api/fs-containers/:id/files
     const requestBody = {
       url: youtubeUrl,
       platform: 'youtube',
     };
 
+    const apiUrl = `${baseUrl}/containers/${containerId}/files`;
     console.log('Making ACRCloud FS API request:', {
-      url: `${baseUrl}/containers/${containerId}/files`,
+      url: apiUrl,
       body: requestBody
     });
 
-    const fsRes = await fetch(`${baseUrl}/containers/${containerId}/files`, {
+    const fsRes = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -54,6 +56,43 @@ export async function POST(req: NextRequest) {
     });
 
     if (!fsRes.ok) {
+      // If 404, try alternative endpoint format
+      if (fsRes.status === 404) {
+        console.log('Trying alternative ACRCloud endpoint format...');
+        
+        // Try alternative endpoint: /api/fs-containers/:id/files
+        const altApiUrl = `${baseUrl.replace('/v1/fs', '')}/api/fs-containers/${containerId}/files`;
+        console.log('Trying alternative URL:', altApiUrl);
+        
+        const altFsRes = await fetch(altApiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        const altFsData = await altFsRes.json();
+        console.log('Alternative ACRCloud FS API response:', {
+          status: altFsRes.status,
+          statusText: altFsRes.statusText,
+          data: altFsData
+        });
+
+        if (!altFsRes.ok) {
+          return NextResponse.json({ 
+            error: 'ACRCloud FS API error', 
+            details: altFsData,
+            status: altFsRes.status,
+            statusText: altFsRes.statusText,
+            triedUrls: [apiUrl, altApiUrl]
+          }, { status: 502 });
+        }
+
+        return NextResponse.json({ status: 'success', result: altFsData });
+      }
+
       return NextResponse.json({ 
         error: 'ACRCloud FS API error', 
         details: fsData,
